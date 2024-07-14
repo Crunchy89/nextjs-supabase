@@ -1,28 +1,39 @@
 "use client"
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '@/services/supabase'
-import { Session } from '@supabase/supabase-js';
+import { useDispatch } from 'react-redux'
+import { setAuthState } from '@/redux/lib/authSlice'
+import { useAppSelector } from "@/redux/index";
+import { useRouter } from 'next/navigation'
 
 const page = () => {
-    const [session, setSession] = useState<Session|null>(null)
+    const router = useRouter()
+    const dispatch = useDispatch()
+    const isLoggedIn = useAppSelector((state) =>state.auth.isLoggedIn)
+    if (isLoggedIn) {
+      router.push('/')
+    }
 
     useEffect(() => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session)
+        dispatch(setAuthState(true))
       })
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session)
+        if(session){
+            dispatch(setAuthState(true))
+        }else{
+            dispatch(setAuthState(false))
+        }
       })
-
       return () => subscription.unsubscribe()
     }, [])
 
-    if (!session) {
+    if (!isLoggedIn) {
       return (
         <div className='container p-5 mx-auto'>
             <div className="flex items-center justify-center border shadow-m rounded-md w-full h-screen">
